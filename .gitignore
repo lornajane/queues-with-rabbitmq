@@ -1,0 +1,4 @@
+vendor/*
+.vagrant
+playbook.retry
+*console.log

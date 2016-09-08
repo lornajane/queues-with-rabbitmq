@@ -1,0 +1,61 @@
+---
+- hosts: all
+  gather_facts: no
+  tasks:
+    - name: apt-get update 
+      raw: sudo apt-get update -qq 
+    - name: Install python 2.7 
+      raw: sudo apt-get install -qq python2.7 
+
+    - name: Fix hostname to allow sudo
+      remote_user: root
+      become: yes
+      lineinfile: dest=/etc/hosts line='127.0.0.1 ubuntu-xenial' owner=root group=root mode=0644
+
+    - name: Install git
+      remote_user: root
+      become: yes
+      apt: pkg=git
+
+    - name: Install PHP
+      remote_user: root
+      become: yes
+      apt: pkg=php,php-bcmath,php-mbstring
+    - name: Install composer
+      remote_user: root
+      become: yes
+      shell: curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin creates=/usr/local/bin/composer
+    - name: Rename composer.phar to composer
+      remote_user: root
+      become: yes
+      shell: mv /usr/local/bin/composer.phar /usr/local/bin/composer creates=/usr/local/bin/composer
+    - name: Make composer executable
+      remote_user: root
+      become: yes
+      file: path=/usr/local/bin/composer mode=a+x state=file
+
+    - name: Install RabbitMQ
+      remote_user: root
+      become: yes
+      apt: pkg=rabbitmq-server
+    - name: Configure RabbitMQ
+      remote_user: root
+      become: yes
+      template: src=rabbitmq.config dest=/etc/rabbitmq/rabbitmq.config
+    - name: Set up Rabbit Management Console
+      remote_user: root
+      become: yes
+      command: rabbitmq-plugins enable rabbitmq_management
+    - name: Restart RabbitMQ
+      remote_user: root
+      become: yes
+      service: name=rabbitmq-server state=restarted
+
+    - name: Set up ngrok config
+      remote_user: ubuntu
+      become: yes
+      file: path=/home/ubuntu/.ngrok2 state=directory
+    - name: Set up ngrok config
+      remote_user: ubuntu
+      become: yes
+      copy: src=ngrok.yml dest=/home/ubuntu/.ngrok2/ngrok.yml
